@@ -1,4 +1,486 @@
+import { useState, useRef, useEffect } from 'react'
+import '../styles/chat.css'
+import { sendMessageStream, uploadFile, uploadURL, uploadDrive, uploadText } from '../services/api'
+
+const SUGGESTIONS = [
+  { icon: '📚', label: 'Bantu belajar' },
+  { icon: '✍️', label: 'Rangkumin materi' },
+  { icon: '🧠', label: 'Latihan soal' },
+  { icon: '🔍', label: 'Jelaskan konsep' },
+]
+
+const SOURCE_TYPES = [
+  { id: 'file', icon: '📄', label: 'Upload File', desc: 'PDF, DOCX, TXT' },
+  { id: 'drive', icon: '📁', label: 'Google Drive', desc: 'Paste link Drive' },
+  { id: 'url', icon: '🌐', label: 'Website URL', desc: 'Paste link website' },
+  { id: 'text', icon: '📋', label: 'Copied Text', desc: 'Paste teks langsung' },
+]
+
 function ChatPage() {
-  return <div className="p-8"><h1 className="text-2xl font-bold">Chat</h1></div>
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [activeMenu, setActiveMenu] = useState('chat')
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sources, setSources] = useState([])
+  const [showAddSource, setShowAddSource] = useState(false)
+  const [activeSourceType, setActiveSourceType] = useState('file')
+  const [sourceInput, setSourceInput] = useState('')
+  const [dragOver, setDragOver] = useState(false)
+
+  // Tambahkan state untuk menyimpan riwayat chat dari localStorage
+  const [chatHistory, setChatHistory] = useState(() => {
+    const saved = localStorage.getItem('eduAssistHistory')
+    return saved ? JSON.parse(saved) : []
+  })
+
+  const messagesEndRef = useRef(null)
+  const inputRef = useRef(null)
+  const fileInputRef = useRef(null)
+
+  const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}')
+  const isNewChat = messages.length === 0
+
+  const initials = userProfile.nama
+    ? userProfile.nama.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U'
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Fungsi untuk menyimpan percakapan ke riwayat
+  const saveChatToHistory = (currentMessages) => {
+    if (currentMessages.length < 2) return // Jangan simpan jika belum ada tanya-jawab
+
+    const title = currentMessages[0].content.slice(0, 30) + (currentMessages[0].content.length > 30 ? '...' : '')
+    const newHistoryItem = {
+      id: Date.now(),
+      title: title,
+      messages: currentMessages,
+      timestamp: new Date().toLocaleString()
+    }
+
+    const updatedHistory = [newHistoryItem, ...chatHistory.filter(h => h.title !== title)]
+    setChatHistory(updatedHistory)
+    localStorage.setItem('eduAssistHistory', JSON.stringify(updatedHistory))
+  }
+
+  function handleSend() {
+    if (!input.trim() || isLoading) return
+
+    const userMsg = { role: 'user', content: input.trim() }
+    const newMessages = [...messages, userMsg]
+    setMessages(newMessages)
+    setInput('')
+    setIsLoading(true)
+
+    // Placeholder untuk jawaban assistant
+    setMessages((prev) => [...prev, { role: 'assistant', content: '' }])
+
+    const profile = JSON.parse(localStorage.getItem('userProfile') || '{}')
+
+    sendMessageStream(
+      {
+        message: userMsg.content,
+        userId: profile.userId || 'guest',
+        sessionId: sessionStorage.getItem('sessionId') || 'session-1',
+      },
+      (chunk) => {
+        setMessages((prev) => {
+          const updated = [...prev]
+          const last = updated[updated.length - 1]
+          if (last.role === 'assistant') {
+            updated[updated.length - 1] = {
+              ...last,
+              content: last.content + chunk,
+            }
+          }
+          return updated
+        })
+      },
+      () => {
+        setIsLoading(false)
+        // Simpan ke history setelah stream selesai
+        setMessages(prev => {
+          saveChatToHistory(prev)
+          return prev
+        })
+      },
+      (errMsg) => {
+        setMessages((prev) => {
+          const updated = [...prev]
+          updated[updated.length - 1] = {
+            role: 'assistant',
+            content: `❌ Error: ${errMsg}. Pastikan backend sudah berjalan.`,
+          }
+          return updated
+        })
+        setIsLoading(false)
+      }
+    )
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
+  function handleSuggestion(label) {
+    setInput(label)
+    inputRef.current?.focus()
+  }
+
+  function handleNewChat() {
+    setMessages([])
+    setInput('')
+    sessionStorage.setItem('sessionId', `session-${Date.now()}`) // Reset session ID
+  }
+
+  function loadHistory(historyItem) {
+    setMessages(historyItem.messages)
+  }
+
+  // ===== SOURCE HANDLERS (Tetap sama) =====
+  function addSource(source) {
+    setSources((prev) => [...prev, source])
+    setShowAddSource(false)
+    setSourceInput('')
+  }
+
+  async function handleFileChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    const profile = JSON.parse(localStorage.getItem('userProfile') || '{}')
+    const tempId = Date.now()
+
+    setSources((prev) => [
+      ...prev,
+      { id: tempId, type: 'file', icon: '📄', name: file.name, meta: 'Uploading...' },
+    ])
+    setShowAddSource(false)
+
+    try {
+      await uploadFile(file, profile.userId || 'guest')
+      setSources((prev) =>
+        prev.map((s) =>
+          s.id === tempId ? { ...s, meta: `${(file.size / 1024).toFixed(1)} KB` } : s
+        )
+      )
+    } catch (err) {
+      setSources((prev) => prev.filter((s) => s.id !== tempId))
+      alert(`Upload gagal: ${err.message}`)
+    }
+  }
+
+  async function handleAddSourceInput() {
+    if (!sourceInput.trim()) return
+    const profile = JSON.parse(localStorage.getItem('userProfile') || '{}')
+    const userId = profile.userId || 'guest'
+
+    try {
+      if (activeSourceType === 'drive') {
+        await uploadDrive(sourceInput, userId)
+        addSource({ id: Date.now(), type: 'drive', icon: '📁', name: 'Google Drive', meta: sourceInput })
+      } else if (activeSourceType === 'url') {
+        await uploadURL(sourceInput, userId)
+        addSource({ id: Date.now(), type: 'url', icon: '🌐', name: sourceInput, meta: 'Website' })
+      } else if (activeSourceType === 'text') {
+        await uploadText(sourceInput, userId)
+        addSource({
+          id: Date.now(),
+          type: 'text',
+          icon: '📋',
+          name: sourceInput.slice(0, 40) + (sourceInput.length > 40 ? '...' : ''),
+          meta: `${sourceInput.length} karakter`,
+        })
+      }
+    } catch (err) {
+      alert(`Gagal tambah sumber: ${err.message}`)
+    }
+  }
+
+  function handleDrop(e) {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (!file) return
+    const tempId = Date.now()
+    setSources((prev) => [
+      ...prev,
+      { id: tempId, type: 'file', icon: '📄', name: file.name, meta: 'Uploading...' },
+    ])
+    setShowAddSource(false)
+    const profile = JSON.parse(localStorage.getItem('userProfile') || '{}')
+    uploadFile(file, profile.userId || 'guest')
+      .then(() => {
+        setSources((prev) =>
+          prev.map((s) =>
+            s.id === tempId ? { ...s, meta: `${(file.size / 1024).toFixed(1)} KB` } : s
+          )
+        )
+      })
+      .catch((err) => {
+        setSources((prev) => prev.filter((s) => s.id !== tempId))
+        alert(`Upload gagal: ${err.message}`)
+      })
+  }
+
+  function deleteSource(id) {
+    setSources((prev) => prev.filter((s) => s.id !== id))
+  }
+
+  return (
+    <div className="chat-root">
+      {/* ===== SIDEBAR NAVIGASI ===== */}
+      <aside className={`chat-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
+        <div className="sidebar-logo">
+          <span className="sidebar-logo-text">
+            Edu<span className="sidebar-logo-accent">Assist</span>
+          </span>
+          <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
+        </div>
+
+        <button className="sidebar-new-chat" onClick={handleNewChat}>
+          <span>✏️</span>
+          <span>New Chat</span>
+        </button>
+
+        <nav className="sidebar-nav">
+          {[
+            { id: 'chat', icon: '💬', label: 'Chat' },
+            { id: 'spaces', icon: '🗂️', label: 'Spaces' },
+            { id: 'history', icon: '🕘', label: 'History' },
+            { id: 'settings', icon: '⚙️', label: 'Settings' },
+          ].map((item) => (
+            <button
+              key={item.id}
+              className={`sidebar-nav-item ${activeMenu === item.id ? 'active' : ''}`}
+              onClick={() => setActiveMenu(item.id)}
+            >
+              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-label">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Bagian Recent yang sekarang Dinamis[cite: 1] */}
+        <div className="sidebar-history">
+          <p className="sidebar-history-title">Recent</p>
+          <div className="history-list">
+            {chatHistory.length > 0 ? (
+              chatHistory.map((item) => (
+                <button 
+                  key={item.id} 
+                  className="sidebar-history-item"
+                  onClick={() => loadHistory(item)}
+                >
+                  <span className="history-icon">💬</span>
+                  <span className="history-text">{item.title}</span>
+                </button>
+              ))
+            ) : (
+              <p className="sidebar-history-empty">Belum ada percakapan</p>
+            )}
+          </div>
+        </div>
+
+        <div className="sidebar-profile">
+          <div className="profile-avatar">{initials}</div>
+          <div className="profile-info">
+            <p className="profile-name">{userProfile.nama || 'User'}</p>
+            <p className="profile-meta">
+              {userProfile.levelPendidikan} · {userProfile.preferensiTone}
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      {/* ===== PANEL SOURCES ===== */}
+      <div className="sources-panel">
+        <div className="sources-header">
+          <h2 className="sources-title">Sources</h2>
+          <span className="sources-count">{sources.length}</span>
+        </div>
+
+        <button className="add-source-btn" onClick={() => setShowAddSource(!showAddSource)}>
+          <span>+</span>
+          <span>Tambah Sumber</span>
+        </button>
+
+        {showAddSource && (
+          <div className="add-source-form">
+            <div className="source-type-tabs">
+              {SOURCE_TYPES.map((t) => (
+                <button
+                  key={t.id}
+                  className={`source-type-tab ${activeSourceType === t.id ? 'active' : ''}`}
+                  onClick={() => setActiveSourceType(t.id)}
+                >
+                  {t.icon}
+                </button>
+              ))}
+            </div>
+
+            {activeSourceType === 'file' && (
+              <div
+                className={`file-drop-zone ${dragOver ? 'drag-over' : ''}`}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <span className="file-drop-icon">📄</span>
+                <p className="file-drop-text">Drop file atau klik untuk upload</p>
+                <p className="file-drop-meta">PDF, DOCX, TXT</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.docx,.txt"
+                  style={{ display: 'none' }}
+                  onChange={handleFileChange}
+                />
+              </div>
+            )}
+
+            {activeSourceType !== 'file' && (
+              <div className="source-input-group">
+                <input
+                  className="source-text-input"
+                  placeholder={
+                    activeSourceType === 'drive' ? 'Paste link Google Drive...' :
+                    activeSourceType === 'url' ? 'Paste URL website...' :
+                    'Paste teks di sini...'
+                  }
+                  value={sourceInput}
+                  onChange={(e) => setSourceInput(e.target.value)}
+                />
+                <button className="source-submit-btn" onClick={handleAddSourceInput}>
+                  Tambah
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {sources.length === 0 ? (
+          <div className="sources-empty">
+            <p className="sources-empty-icon">📂</p>
+            <p className="sources-empty-text">Belum ada sumber</p>
+            <p className="sources-empty-sub">Tambah file, link, atau teks sebagai konteks RAG</p>
+          </div>
+        ) : (
+          <div className="sources-grid">
+            {sources.map((source) => (
+              <div key={source.id} className="source-card">
+                <div className="source-card-icon">{source.icon}</div>
+                <div className="source-card-info">
+                  <p className="source-card-name">{source.name}</p>
+                  <p className="source-card-meta">{source.meta}</p>
+                </div>
+                <button className="source-card-delete" onClick={() => deleteSource(source.id)}>
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ===== PANEL CHAT ===== */}
+      <main className="chat-main">
+        {isNewChat ? (
+          <div className="chat-landing">
+            <h1 className="chat-landing-title">
+              Halo, <span className="chat-landing-accent">{userProfile.nama || 'Pelajar'}</span> 👋
+            </h1>
+            <p className="chat-landing-sub">Ada yang bisa EduAssist bantu hari ini?</p>
+
+            <div className="chat-input-wrapper landing">
+              <textarea
+                ref={inputRef}
+                className="chat-input"
+                placeholder="Tanya apa saja..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                rows={1}
+              />
+              <button
+                className={`chat-send-btn ${input.trim() ? 'active' : ''}`}
+                onClick={handleSend}
+                disabled={!input.trim() || isLoading}
+              >
+                ↑
+              </button>
+            </div>
+
+            <div className="chat-suggestions">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s.label}
+                  className="suggestion-chip"
+                  onClick={() => handleSuggestion(s.label)}
+                >
+                  <span>{s.icon}</span>
+                  <span>{s.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="chat-messages">
+              {messages.map((msg, i) => (
+                <div key={i} className={`chat-bubble-row ${msg.role}`}>
+                  {msg.role === 'assistant' && (
+                    <div className="assistant-avatar">EA</div>
+                  )}
+                  <div className={`chat-bubble ${msg.role}`}>
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+              {isLoading && messages[messages.length - 1]?.content === '' && (
+                <div className="chat-bubble-row assistant">
+                  <div className="assistant-avatar">EA</div>
+                  <div className="chat-bubble assistant loading">
+                    <span className="dot" />
+                    <span className="dot" />
+                    <span className="dot" />
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="chat-input-bar">
+              <div className="chat-input-wrapper">
+                <textarea
+                  ref={inputRef}
+                  className="chat-input"
+                  placeholder="Lanjutkan percakapan..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  rows={1}
+                />
+                <button
+                  className={`chat-send-btn ${input.trim() ? 'active' : ''}`}
+                  onClick={handleSend}
+                  disabled={!input.trim() || isLoading}
+                >
+                  ↑
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </main>
+    </div>
+  )
 }
+
 export default ChatPage
