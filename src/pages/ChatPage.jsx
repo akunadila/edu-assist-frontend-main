@@ -28,7 +28,7 @@ function ChatPage() {
   const [sourceInput, setSourceInput] = useState('')
   const [dragOver, setDragOver] = useState(false)
 
-  // Tambahkan state untuk menyimpan riwayat chat dari localStorage
+  
   const [chatHistory, setChatHistory] = useState(() => {
     const saved = localStorage.getItem('eduAssistHistory')
     return saved ? JSON.parse(saved) : []
@@ -49,9 +49,8 @@ function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Fungsi untuk menyimpan percakapan ke riwayat
   const saveChatToHistory = (currentMessages) => {
-    if (currentMessages.length < 2) return // Jangan simpan jika belum ada tanya-jawab
+    if (currentMessages.length < 2) return 
 
     const title = currentMessages[0].content.slice(0, 30) + (currentMessages[0].content.length > 30 ? '...' : '')
     const newHistoryItem = {
@@ -75,7 +74,6 @@ function ChatPage() {
     setInput('')
     setIsLoading(true)
 
-    // Placeholder untuk jawaban assistant
     setMessages((prev) => [...prev, { role: 'assistant', content: '' }])
 
     const profile = JSON.parse(localStorage.getItem('userProfile') || '{}')
@@ -101,7 +99,6 @@ function ChatPage() {
       },
       () => {
         setIsLoading(false)
-        // Simpan ke history setelah stream selesai
         setMessages(prev => {
           saveChatToHistory(prev)
           return prev
@@ -136,14 +133,14 @@ function ChatPage() {
   function handleNewChat() {
     setMessages([])
     setInput('')
-    sessionStorage.setItem('sessionId', `session-${Date.now()}`) // Reset session ID
+    sessionStorage.setItem('sessionId', `session-${Date.now()}`) 
   }
 
   function loadHistory(historyItem) {
     setMessages(historyItem.messages)
   }
 
-  // ===== SOURCE HANDLERS (Tetap sama) =====
+  
   function addSource(source) {
     setSources((prev) => [...prev, source])
     setShowAddSource(false)
@@ -234,7 +231,7 @@ function ChatPage() {
 
   return (
     <div className="chat-root">
-      {/* ===== SIDEBAR NAVIGASI ===== */}
+     
       <aside className={`chat-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-logo">
           <span className="sidebar-logo-text">
@@ -266,7 +263,7 @@ function ChatPage() {
           ))}
         </nav>
 
-        {/* Bagian Recent yang sekarang Dinamis[cite: 1] */}
+        
         <div className="sidebar-history">
           <p className="sidebar-history-title">Recent</p>
           <div className="history-list">
@@ -298,7 +295,7 @@ function ChatPage() {
         </div>
       </aside>
 
-      {/* ===== PANEL SOURCES ===== */}
+      
       <div className="sources-panel">
         <div className="sources-header">
           <h2 className="sources-title">Sources</h2>
@@ -389,7 +386,6 @@ function ChatPage() {
         )}
       </div>
 
-      {/* ===== PANEL CHAT ===== */}
       <main className="chat-main">
         {isNewChat ? (
           <div className="chat-landing">

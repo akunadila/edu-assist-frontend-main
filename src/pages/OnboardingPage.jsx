@@ -65,7 +65,7 @@ function OnboardingPage() {
       <div className="onboarding-grid" />
 
       <div className="onboarding-container">
-        {/* Left: Branding */}
+      
         <div className="onboarding-brand">
           <div className="brand-badge">Coding Camp 2026 · DBS Foundation</div>
           <h1 className="brand-title">
@@ -86,7 +86,6 @@ function OnboardingPage() {
           </div>
         </div>
 
-        {/* Right: Form */}
         <div className="onboarding-card">
           <div className="card-header">
             <h2 className="card-title">Hello there!</h2>
@@ -96,7 +95,7 @@ function OnboardingPage() {
           </div>
 
           <div className="form-fields">
-            {/* Nama */}
+            
             <div className="field-group">
               <Label className="field-label">Nama</Label>
               <Input
@@ -109,7 +108,7 @@ function OnboardingPage() {
               {errors.nama && <p className="field-error">{errors.nama}</p>}
             </div>
 
-            {/* Usia */}
+          
             <div className="field-group">
               <Label className="field-label">Usia</Label>
               <Input
@@ -157,7 +156,6 @@ function OnboardingPage() {
               {errors.levelPendidikan && <p className="field-error">{errors.levelPendidikan}</p>}
             </div>
 
-            {/* Preferensi Tone */}
             <div className="field-group">
               <Label className="field-label">Preferensi Tone Respons</Label>
               <Select

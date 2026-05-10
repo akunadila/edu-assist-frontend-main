@@ -1,12 +1,11 @@
-// Simulasikan delay agar terasa seperti memanggil server sungguhan
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// ===== ONBOARDING =====
 export async function submitOnboarding(profileData) {
   console.log("Mocking Onboarding for:", profileData.nama);
   await sleep(1000);
   
-  // Mengembalikan data sukses dummy
+ 
   return {
     status: 'success',
     message: 'Onboarding berhasil (Mock)',
@@ -14,13 +13,11 @@ export async function submitOnboarding(profileData) {
   };
 }
 
-// ===== CHAT STREAMING =====
 export async function sendMessageStream(payload, onChunk, onDone, onError) {
   try {
     console.log("Mocking Chat Stream for:", payload.message);
     await sleep(500);
 
-    // Simulasi potongan teks (chunks) seperti respon AI asli
     const dummyResponses = [
       "Halo! ", "Ini ", "adalah ", "respon ", "otomatis ", 
       "dari ", "AksesIlmu ", "mode ", "dummy. ", 
@@ -28,7 +25,7 @@ export async function sendMessageStream(payload, onChunk, onDone, onError) {
     ];
 
     for (const chunk of dummyResponses) {
-      await sleep(100); // Simulasi kecepatan mengetik AI
+      await sleep(100); 
       onChunk(chunk);
     }
 
@@ -38,10 +35,10 @@ export async function sendMessageStream(payload, onChunk, onDone, onError) {
   }
 }
 
-// ===== UPLOAD SOURCE (RAG) =====
+
 export async function uploadFile(file, userId) {
   console.log("Mocking Upload File:", file.name);
-  await sleep(2000); // Simulasi proses ekstraksi PDF
+  await sleep(2000); 
   
   return {
     status: 'success',
@@ -79,7 +76,6 @@ export async function uploadText(text, userId) {
 
 export async function getSources(userId) {
   await sleep(800);
-  // Mengembalikan daftar sumber dummy agar UI "Spaces" kamu terisi
   return [
     { id: '1', name: 'Materi_Cloud_Computing.pdf', type: 'file' },
     { id: '2', name: 'https://reactjs.org/docs', type: 'url' }
