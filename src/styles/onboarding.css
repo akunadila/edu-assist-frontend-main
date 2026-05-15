@@ -1,259 +1,89 @@
-.onboarding-root {
-    min-height: 100vh;
-    background: #f8f7f4;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    position: relative;
-    overflow: hidden;
-    font-family: 'Geist Variable', sans-serif;
-  }
-  
-  .onboarding-bg {
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(ellipse 80% 60% at 20% 20%, rgba(124,131,253,0.08) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 50% at 80% 80%, rgba(167,139,250,0.06) 0%, transparent 60%);
-    pointer-events: none;
-  }
-  
-  .onboarding-grid {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
-    background-size: 48px 48px;
-    pointer-events: none;
-    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
-  }
-  
-  .onboarding-container {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    gap: 5rem;
-    align-items: center;
-    max-width: 960px;
-    width: 100%;
-  }
-  
-  /* --- Brand --- */
-  .onboarding-brand {
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .brand-badge {
-    display: inline-block;
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #6366f1;
-    border: 1px solid rgba(99,102,241,0.25);
-    background: rgba(99,102,241,0.08);
-    padding: 0.3rem 0.8rem;
-    border-radius: 100px;
-    margin-bottom: 1.5rem;
-  }
-  
-  .brand-title {
-    font-size: clamp(2.8rem, 5vw, 4rem);
-    font-weight: 800;
-    color: #1a1a2e;
-    line-height: 1.05;
-    letter-spacing: -0.03em;
-    margin-bottom: 1.25rem;
-  }
-  
-  .brand-accent {
-    color: #6366f1;
-  }
-  
-  .brand-desc {
-    font-size: 1rem;
-    color: #6b7280;
-    line-height: 1.7;
-    margin-bottom: 2rem;
-    max-width: 340px;
-  }
-  
-  .brand-features {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .feature-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.875rem;
-    color: #6b7280;
-  }
-  
-  .feature-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #6366f1;
-    flex-shrink: 0;
-  }
-  
-  /* --- Card --- */
-  .onboarding-card {
-    flex: 0 0 400px;
-    background: #ffffff;
-    border: 1px solid rgba(0,0,0,0.07);
-    border-radius: 20px;
-    padding: 2rem 2rem 2.25rem;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
-  }
-  
-  .card-header {
-    margin-bottom: 1.75rem;
-  }
-  
-  .card-title {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: #1a1a2e;
-    margin-bottom: 0.4rem;
-  }
-  
-  .card-subtitle {
-    font-size: 0.82rem;
-    color: #9ca3af;
-    line-height: 1.5;
-  }
-  
-  /* --- Form --- */
-  .form-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 1.1rem;
-    margin-bottom: 1.75rem;
-  }
-  
-  .field-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-  
-  .field-label {
-    font-size: 0.8rem !important;
-    font-weight: 500 !important;
-    color: #374151 !important;
-  }
-  
-  .field-input {
-    background: #f9fafb !important;
-    border: 1px solid #e5e7eb !important;
-    color: #1a1a2e !important;
-    font-size: 0.875rem !important;
-    border-radius: 10px !important;
-    height: 42px !important;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-  
-  .field-input::placeholder {
-    color: #c4cad4 !important;
-  }
-  
-  .field-input:focus {
-    border-color: rgba(99,102,241,0.5) !important;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.1) !important;
-    outline: none !important;
-    background: #fff !important;
-  }
-  
-  .field-error {
-    font-size: 0.75rem;
-    color: #ef4444;
-    margin-top: 0.1rem;
-  }
-  
-  /* --- Select --- */
-  .select-content {
-    background: #ffffff !important;
-    border: 1px solid #e5e7eb !important;
-    border-radius: 10px !important;
-    color: #1a1a2e !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
-  }
-  
-  .select-item {
-    color: #374151 !important;
-    font-size: 0.875rem !important;
-    cursor: pointer;
-  }
-  
-  .select-item:hover,
-  .select-item:focus {
-    background: rgba(99,102,241,0.08) !important;
-    color: #6366f1 !important;
-  }
-  
-  /* --- Submit Button --- */
-  .submit-btn {
-    width: 100%;
-    height: 44px;
-    background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
-    color: #fff;
-    font-size: 0.9rem;
-    font-weight: 600;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
-    box-shadow: 0 4px 20px rgba(99,102,241,0.25);
-    font-family: inherit;
-  }
-  
-  .submit-btn:hover {
-    opacity: 0.92;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 28px rgba(99,102,241,0.35);
-  }
-  
-  .submit-btn:active {
-    transform: translateY(0);
-  }
-  
-  .submit-arrow {
-    font-size: 1rem;
-    transition: transform 0.2s;
-  }
-  
-  .submit-btn:hover .submit-arrow {
-    transform: translateX(3px);
-  }
-  
-  /* --- Responsive --- */
-  @media (max-width: 768px) {
-    .onboarding-container {
-      flex-direction: column;
-      gap: 2rem;
-    }
-    .onboarding-brand {
-      text-align: center;
-    }
-    .brand-desc {
-      max-width: 100%;
-    }
-    .brand-features {
-      align-items: center;
-    }
-    .onboarding-card {
-      flex: none;
-      width: 100%;
-    }
-  }
+.login-root {
+  min-height: 100vh;
+  background: #f0efed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Geist Variable', sans-serif;
+}
+
+.login-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 3rem 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+}
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.login-logo-text {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  letter-spacing: -0.03em;
+}
+
+.login-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  text-align: center;
+}
+
+.login-sub {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.login-google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  border-radius: 100px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #1a1a2e;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  margin-top: 0.5rem;
+}
+
+.login-google-btn:hover {
+  background: #f9fafb;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}

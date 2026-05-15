@@ -1,187 +1,34 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import '../styles/onboarding.css'
-
-const LEVEL_PENDIDIKAN = ['SD', 'SMP', 'SMA/SMK', 'D3', 'S1', 'S2/S3', 'Other']
-const PREFERENSI_TONE = ['Formal', 'Santai', 'Singkat & Padat', 'Detail & Lengkap']
 
 function OnboardingPage() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({
-    nama: '',
-    usia: '',
-    levelPendidikan: 'S1',
-    preferensiTone: 'Santai',
-  })
-  const [customLevel, setCustomLevel] = useState('')
-  const [errors, setErrors] = useState({})
 
-  function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value })
-    setErrors({ ...errors, [e.target.name]: '' })
-  }
-
-  function handleSelect(field, value) {
-    setForm({ ...form, [field]: value })
-    setErrors({ ...errors, [field]: '' })
-    if (field === 'levelPendidikan' && value !== 'Other') {
-      setCustomLevel('')
-    }
-  }
-
-  function validate() {
-    const newErrors = {}
-    if (!form.nama.trim()) newErrors.nama = 'Nama tidak boleh kosong'
-    if (!form.usia || isNaN(form.usia) || Number(form.usia) < 5 || Number(form.usia) > 100)
-      newErrors.usia = 'Masukkan usia yang valid'
-    if (!form.levelPendidikan || (form.levelPendidikan === 'Other' && !customLevel.trim()))
-      newErrors.levelPendidikan = 'Isi level pendidikanmu'
-    if (!form.preferensiTone) newErrors.preferensiTone = 'Pilih preferensi tone'
-    return newErrors
-  }
-
-  function handleSubmit() {
-    const newErrors = validate()
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
-    localStorage.setItem('userProfile', JSON.stringify(form))
+  function handleGoogleLogin() {
+    // Nanti disambungkan ke Google Auth dari Nadila
+    // Sementara langsung ke chat dulu
     navigate('/chat')
   }
 
   return (
-    <div className="onboarding-root">
-      <div className="onboarding-bg" />
-      <div className="onboarding-grid" />
-
-      <div className="onboarding-container">
-      
-        <div className="onboarding-brand">
-          <div className="brand-badge">Coding Camp 2026 · DBS Foundation</div>
-          <h1 className="brand-title">
-            Edu<span className="brand-accent">Assist</span>
-          </h1>
-          <p className="brand-desc">
-            Asisten akademik adaptif yang memahami siapa kamu — bukan sekadar menjawab pertanyaan.
-          </p>
-          <div className="brand-features">
-            {[
-              
-            ].map((f) => (
-              <div className="feature-item" key={f}>
-                <span className="feature-dot" />
-                <span>{f}</span>
-              </div>
-            ))}
-          </div>
+    <div className="login-root">
+      <div className="login-grid" />
+      <div className="login-card">
+        <div className="login-logo">
+          ✏️ <span className="login-logo-text">EduAssist</span>
         </div>
-
-        <div className="onboarding-card">
-          <div className="card-header">
-            <h2 className="card-title">Hello there!</h2>
-            <p className="card-subtitle">
-              Isi profilmu agar kami bisa menyesuaikan pengalaman belajarmu
-            </p>
-          </div>
-
-          <div className="form-fields">
-            
-            <div className="field-group">
-              <Label className="field-label">Nama</Label>
-              <Input
-                name="nama"
-                placeholder="Nama lengkapmu"
-                value={form.nama}
-                onChange={handleChange}
-                className="field-input"
-              />
-              {errors.nama && <p className="field-error">{errors.nama}</p>}
-            </div>
-
-          
-            <div className="field-group">
-              <Label className="field-label">Usia</Label>
-              <Input
-                name="usia"
-                type="number"
-                placeholder="Contoh: 20"
-                value={form.usia}
-                onChange={handleChange}
-                className="field-input"
-              />
-              {errors.usia && <p className="field-error">{errors.usia}</p>}
-            </div>
-
-            {}
-            <div className="field-group">
-              <Label className="field-label">Level Pendidikan</Label>
-              <Select
-                value={form.levelPendidikan}
-                onValueChange={(v) => handleSelect('levelPendidikan', v)}
-              >
-                <SelectTrigger className="field-input">
-                  <SelectValue placeholder="Pilih level pendidikan" />
-                </SelectTrigger>
-                <SelectContent className="select-content">
-                  {LEVEL_PENDIDIKAN.map((lvl) => (
-                    <SelectItem key={lvl} value={lvl} className="select-item">
-                      {lvl}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {form.levelPendidikan === 'Other' && (
-                <Input
-                  placeholder="Tulis level pendidikanmu"
-                  value={customLevel}
-                  onChange={(e) => {
-                    setCustomLevel(e.target.value)
-                    setForm({ ...form, levelPendidikan: e.target.value })
-                    setErrors({ ...errors, levelPendidikan: '' })
-                  }}
-                  className="field-input"
-                  style={{ marginTop: '0.5rem' }}
-                />
-              )}
-              {errors.levelPendidikan && <p className="field-error">{errors.levelPendidikan}</p>}
-            </div>
-
-            <div className="field-group">
-              <Label className="field-label">Preferensi Tone Respons</Label>
-              <Select
-                value={form.preferensiTone}
-                onValueChange={(v) => handleSelect('preferensiTone', v)}
-              >
-                <SelectTrigger className="field-input">
-                  <SelectValue placeholder="Pilih gaya komunikasi" />
-                </SelectTrigger>
-                <SelectContent className="select-content">
-                  {PREFERENSI_TONE.map((tone) => (
-                    <SelectItem key={tone} value={tone} className="select-item">
-                      {tone}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.preferensiTone && <p className="field-error">{errors.preferensiTone}</p>}
-            </div>
-          </div>
-
-          <button className="submit-btn" onClick={handleSubmit}>
-            Mulai Belajar
-            <span className="submit-arrow">→</span>
-          </button>
-        </div>
+        <h1 className="login-title">Selamat datang di EduAssist</h1>
+        <p className="login-sub">Silahkan log in untuk dapat mengakses EduAssist</p>
+        <button className="login-google-btn" onClick={handleGoogleLogin}>
+          <svg width="20" height="20" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            <path fill="none" d="M0 0h48v48H0z"/>
+          </svg>
+          Continue with Google
+        </button>
       </div>
     </div>
   )
