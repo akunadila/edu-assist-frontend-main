@@ -1,89 +1,172 @@
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// src/services/api.js
 
+import api from './axiosInstance'
+
+/* =========================
+   ONBOARDING
+========================= */
 export async function submitOnboarding(profileData) {
-  console.log("Mocking Onboarding for:", profileData.nama);
-  await sleep(1000);
-  
- 
-  return {
-    status: 'success',
-    message: 'Onboarding berhasil (Mock)',
-    user_id: 'user-123'
-  };
-}
-
-export async function sendMessageStream(payload, onChunk, onDone, onError) {
   try {
-    console.log("Mocking Chat Stream for:", payload.message);
-    await sleep(500);
-
-    const dummyResponses = [
-      "Halo! ", "Ini ", "adalah ", "respon ", "otomatis ", 
-      "dari ", "AksesIlmu ", "mode ", "dummy. ", 
-      "\n\nSaya sedang membantu kamu belajar materi ini."
-    ];
-
-    for (const chunk of dummyResponses) {
-      await sleep(100); 
-      onChunk(chunk);
-    }
-
-    onDone();
-  } catch (err) {
-    onError("Gagal mengirim pesan (Mock Error)");
+    return await api.post('/onboarding', profileData)
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      'Onboarding gagal'
+    )
   }
 }
 
+/* =========================
+   CHAT STREAM
+========================= */
+export async function sendMessageStream(
+  payload,
+  onChunk,
+  onDone,
+  onError
+) {
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_BASE_URL}/chat`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      }
+    )
 
+    if (!response.ok) {
+      throw new Error('Gagal connect ke server')
+    }
+
+    if (!response.body) {
+      throw new Error('Response body tidak tersedia')
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+
+    while (true) {
+      const { done, value } = await reader.read()
+
+      if (done) break
+
+      const chunk = decoder.decode(value)
+
+      onChunk(chunk)
+    }
+
+    onDone()
+  } catch (error) {
+    onError(error.message)
+  }
+}
+
+/* =========================
+   UPLOAD FILE
+========================= */
 export async function uploadFile(file, userId) {
-  console.log("Mocking Upload File:", file.name);
-  await sleep(2000); 
-  
-  return {
-    status: 'success',
-    message: 'File berhasil diunggah dan di-index oleh RAG (Mock)',
-    data: { id: Date.now().toString(), name: file.name, type: 'file' }
-  };
+  try {
+    const formData = new FormData()
+
+    formData.append('file', file)
+    formData.append('userId', userId)
+
+    return await api.post(
+      '/upload/file',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      'Upload file gagal'
+    )
+  }
 }
 
+/* =========================
+   UPLOAD URL
+========================= */
 export async function uploadURL(url, userId) {
-  console.log("Mocking Upload URL:", url);
-  await sleep(1500);
-  return {
-    status: 'success',
-    data: { id: Date.now().toString(), name: url, type: 'url' }
-  };
+  try {
+    return await api.post('/upload/url', {
+      url,
+      userId,
+    })
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      'Upload URL gagal'
+    )
+  }
 }
 
+/* =========================
+   UPLOAD DRIVE
+========================= */
 export async function uploadDrive(driveUrl, userId) {
-  console.log("Mocking Upload Drive:", driveUrl);
-  await sleep(1500);
-  return {
-    status: 'success',
-    data: { id: Date.now().toString(), name: "Google Drive Doc", type: 'drive' }
-  };
+  try {
+    return await api.post('/upload/drive', {
+      driveUrl,
+      userId,
+    })
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      'Upload Drive gagal'
+    )
+  }
 }
 
+/* =========================
+   UPLOAD TEXT
+========================= */
 export async function uploadText(text, userId) {
-  console.log("Mocking Upload Text");
-  await sleep(1000);
-  return {
-    status: 'success',
-    data: { id: Date.now().toString(), name: "Catatan Teks", type: 'text' }
-  };
+  try {
+    return await api.post('/upload/text', {
+      text,
+      userId,
+    })
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      'Upload text gagal'
+    )
+  }
 }
 
+/* =========================
+   GET SOURCES
+========================= */
 export async function getSources(userId) {
-  await sleep(800);
-  return [
-    { id: '1', name: 'Materi_Cloud_Computing.pdf', type: 'file' },
-    { id: '2', name: 'https://reactjs.org/docs', type: 'url' }
-  ];
+  try {
+    return await api.get(`/sources/${userId}`)
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      'Gagal mengambil sources'
+    )
+  }
 }
 
-export async function deleteSource(sourceId, userId) {
-  console.log("Mocking Delete Source ID:", sourceId);
-  await sleep(500);
-  return { status: 'success', message: 'Source berhasil dihapus' };
+/* =========================
+   DELETE SOURCE
+========================= */
+export async function deleteSource(sourceId) {
+  try {
+    return await api.delete(`/sources/${sourceId}`)
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.message ||
+      'Gagal menghapus source'
+    )
+  }
 }
