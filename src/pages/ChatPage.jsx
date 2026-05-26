@@ -39,6 +39,15 @@ function ChatPage() {
   const inputRef = useRef(null)
   const fileInputRef = useRef(null)
 
+  useEffect(() => {
+    let guestSessionId = localStorage.getItem('guestSessionId')
+  
+    if (!guestSessionId) {
+      guestSessionId = `guest-${Date.now()}`
+      localStorage.setItem('guestSessionId', guestSessionId)
+    }
+  }, [])
+  
   const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}')
   const isNewChat = messages.length === 0
 
@@ -98,14 +107,13 @@ function ChatPage() {
             educationLevel: profile.levelPendidikan || 'undergraduate',
             difficultyPreference: 'medium',
             favouriteSubjects: [],
-            pace: 'normal',
+            pace: 'medium',        // ← fix dari 'normal' ke 'medium'
             explanationStyle: profile.preferensiTone || 'concise',
           },
         })
         sessionId = session.conversationId
         sessionStorage.setItem('sessionId', sessionId)
 
-        // Refresh sessions list
         const data = await listChatSessions(guestSessionId)
         setSessionsList(data.sessions || [])
       }
@@ -156,8 +164,6 @@ function ChatPage() {
     try {
       setIsLoadingHistory(true)
       const guestSessionId = localStorage.getItem('guestSessionId')
-
-      // Kalau dari backend (ada session.id atau conversationId)
       if (session.id || session.conversationId) {
         const sessionId = session.id || session.conversationId
         const data = await getChatHistory(sessionId, guestSessionId)
@@ -168,7 +174,6 @@ function ChatPage() {
         setMessages(formattedMessages)
         sessionStorage.setItem('sessionId', sessionId)
       } else {
-        // Fallback dari localStorage
         setMessages(session.messages || [])
       }
       setActiveMenu('chat')
@@ -245,19 +250,15 @@ function ChatPage() {
 
   return (
     <div className={`chat-root ${theme}`}>
-
-      {/* ===== SIDEBAR ===== */}
       <aside className={`chat-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-logo">
           <span className="sidebar-logo-text">Edu<span className="sidebar-logo-accent">Assist</span></span>
           <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
         </div>
-
         <button className="sidebar-new-chat" onClick={handleNewChat}>
           <span>✏️</span>
           <span>New Chat</span>
         </button>
-
         <nav className="sidebar-nav">
           {[
             { id: 'chat', icon: '💬', label: 'Chat' },
@@ -275,7 +276,6 @@ function ChatPage() {
             </button>
           ))}
         </nav>
-
         <div className="sidebar-history">
           <p className="sidebar-history-title">Recent</p>
           {sessionsList.length > 0 ? (
@@ -300,7 +300,6 @@ function ChatPage() {
             <p className="sidebar-history-empty">Belum ada percakapan</p>
           )}
         </div>
-
         <div className="sidebar-profile">
           <div className="profile-avatar">{initials}</div>
           <div className="profile-info">
@@ -310,19 +309,16 @@ function ChatPage() {
         </div>
       </aside>
 
-      {/* ===== SOURCES PANEL ===== */}
       {activeMenu === 'chat' && (
         <div className="sources-panel">
           <div className="sources-header">
             <h2 className="sources-title">Sources</h2>
             <span className="sources-count">{sources.length}</span>
           </div>
-
           <button className="add-source-btn" onClick={() => setShowAddSource(!showAddSource)}>
             <span>+</span>
             <span>Tambah Sumber</span>
           </button>
-
           {showAddSource && (
             <div className="add-source-form">
               <div className="source-type-tabs">
@@ -367,7 +363,6 @@ function ChatPage() {
               )}
             </div>
           )}
-
           {sources.length === 0 ? (
             <div className="sources-empty">
               <p className="sources-empty-icon">📂</p>
@@ -391,10 +386,7 @@ function ChatPage() {
         </div>
       )}
 
-      {/* ===== MAIN CONTENT ===== */}
       <main className="chat-main">
-
-        {/* HISTORY */}
         {activeMenu === 'history' && (
           <div className="panel-content">
             <div className="panel-header">
@@ -409,17 +401,11 @@ function ChatPage() {
                 </div>
               ) : sessionsList.length > 0 ? (
                 sessionsList.map((session) => (
-                  <div
-                    key={session.id || session.conversationId}
-                    className="history-item"
-                    onClick={() => loadHistory(session)}
-                  >
+                  <div key={session.id || session.conversationId} className="history-item" onClick={() => loadHistory(session)}>
                     <div className="history-item-icon">💬</div>
                     <div className="history-item-info">
                       <p className="history-item-title">{session.title || 'Percakapan'}</p>
-                      <p className="history-item-date">
-                        {session.createdAt ? new Date(session.createdAt).toLocaleString() : ''}
-                      </p>
+                      <p className="history-item-date">{session.createdAt ? new Date(session.createdAt).toLocaleString() : ''}</p>
                     </div>
                     <span className="history-item-arrow">→</span>
                   </div>
@@ -446,14 +432,12 @@ function ChatPage() {
           </div>
         )}
 
-        {/* SETTINGS */}
         {activeMenu === 'settings' && (
           <div className="panel-content">
             <div className="panel-header">
               <h2 className="panel-title">⚙️ Pengaturan</h2>
               <p className="panel-sub">Kelola profil dan tampilan aplikasi</p>
             </div>
-
             <div className="settings-section">
               <h3 className="settings-section-title">Profil</h3>
               <div className="settings-profile-card">
@@ -471,7 +455,6 @@ function ChatPage() {
                 </div>
               </div>
             </div>
-
             <div className="settings-section">
               <h3 className="settings-section-title">Tema Tampilan</h3>
               <div className="settings-theme-options">
@@ -485,20 +468,15 @@ function ChatPage() {
                 </button>
               </div>
             </div>
-
             <div className="settings-section">
               <h3 className="settings-section-title">Akun</h3>
-              <button
-                className="settings-logout-btn"
-                onClick={() => { localStorage.clear(); window.location.href = '/' }}
-              >
+              <button className="settings-logout-btn" onClick={() => { localStorage.clear(); window.location.href = '/' }}>
                 Keluar dari EduAssist
               </button>
             </div>
           </div>
         )}
 
-        {/* SPACES */}
         {activeMenu === 'spaces' && (
           <div className="panel-content">
             <div className="panel-header">
@@ -513,7 +491,6 @@ function ChatPage() {
           </div>
         )}
 
-        {/* CHAT */}
         {activeMenu === 'chat' && (
           <>
             {isNewChat ? (

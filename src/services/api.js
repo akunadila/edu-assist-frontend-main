@@ -21,7 +21,6 @@ export async function logout() {
 /* =========================
    CHAT SESSIONS
 ========================= */
-
 export async function createChatSession(payload = {}) {
   try {
     return await api.post('/api/v1/chat/sessions', {
@@ -31,7 +30,7 @@ export async function createChatSession(payload = {}) {
         educationLevel: 'undergraduate',
         difficultyPreference: 'medium',
         favouriteSubjects: [],
-        pace: 'normal',
+        pace: 'medium',        // ← fix dari 'normal' ke 'medium'
         explanationStyle: 'concise',
       },
       guestSessionId: payload.guestSessionId || undefined,
