@@ -1,6 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
 import '../styles/chat.css'
 import { sendMessage, createChatSession, uploadFile, uploadURL, uploadDrive, uploadText, listChatSessions, getChatHistory } from '../services/api'
+import {
+  clearGuestChatState,
+  getChatSessionStorageKey,
+  getGuestSessionIdForChatRequest,
+  getOrCreateGuestSessionId,
+  isAuthenticatedUser,
+} from '../services/chatSessionIdentity'
 
 const SUGGESTIONS = [
   { icon: '📚', label: 'Bantu belajar' },
@@ -40,12 +47,12 @@ function ChatPage() {
   const fileInputRef = useRef(null)
 
   useEffect(() => {
-    let guestSessionId = localStorage.getItem('guestSessionId')
-  
-    if (!guestSessionId) {
-      guestSessionId = `guest-${Date.now()}`
-      localStorage.setItem('guestSessionId', guestSessionId)
+    if (isAuthenticatedUser()) {
+      clearGuestChatState()
+      return
     }
+
+    getOrCreateGuestSessionId()
   }, [])
   
   const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}')
@@ -62,7 +69,7 @@ function ChatPage() {
   useEffect(() => {
     async function loadSessions() {
       try {
-        const guestSessionId = localStorage.getItem('guestSessionId')
+        const guestSessionId = getGuestSessionIdForChatRequest()
         const data = await listChatSessions(guestSessionId)
         setSessionsList(data.sessions || [])
       } catch (err) {
@@ -95,24 +102,24 @@ function ChatPage() {
     setIsLoading(true)
 
     try {
-      let sessionId = sessionStorage.getItem('sessionId')
-      const guestSessionId = localStorage.getItem('guestSessionId')
+      const sessionStorageKey = getChatSessionStorageKey(userProfile)
+      let sessionId = sessionStorage.getItem(sessionStorageKey)
+      const guestSessionId = getGuestSessionIdForChatRequest()
 
       if (!sessionId) {
-        const profile = JSON.parse(localStorage.getItem('userProfile') || '{}')
         const session = await createChatSession({
           title: input.trim().slice(0, 50),
           guestSessionId,
           studentProfile: {
-            educationLevel: profile.levelPendidikan || 'undergraduate',
+            educationLevel: userProfile.levelPendidikan || 'undergraduate',
             difficultyPreference: 'medium',
             favouriteSubjects: [],
             pace: 'medium',        // ← fix dari 'normal' ke 'medium'
-            explanationStyle: profile.preferensiTone || 'concise',
+            explanationStyle: userProfile.preferensiTone || 'concise',
           },
         })
         sessionId = session.conversationId
-        sessionStorage.setItem('sessionId', sessionId)
+        sessionStorage.setItem(sessionStorageKey, sessionId)
 
         const data = await listChatSessions(guestSessionId)
         setSessionsList(data.sessions || [])
@@ -122,7 +129,7 @@ function ChatPage() {
 
       const assistantMsg = {
         role: 'assistant',
-        content: result.content || result.message || result.reply || 'Tidak ada response.',
+        content: result.assistantMessage?.content || result.content || result.message || result.reply || 'Tidak ada response.',
       }
 
       setMessages((prev) => {
@@ -156,14 +163,14 @@ function ChatPage() {
     if (messages.length >= 2) saveChatToHistory(messages)
     setMessages([])
     setInput('')
-    sessionStorage.removeItem('sessionId')
+    sessionStorage.removeItem(getChatSessionStorageKey(userProfile))
     setActiveMenu('chat')
   }
 
   async function loadHistory(session) {
     try {
       setIsLoadingHistory(true)
-      const guestSessionId = localStorage.getItem('guestSessionId')
+      const guestSessionId = getGuestSessionIdForChatRequest()
       if (session.id || session.conversationId) {
         const sessionId = session.id || session.conversationId
         const data = await getChatHistory(sessionId, guestSessionId)
@@ -172,7 +179,7 @@ function ChatPage() {
           content: msg.content,
         }))
         setMessages(formattedMessages)
-        sessionStorage.setItem('sessionId', sessionId)
+        sessionStorage.setItem(getChatSessionStorageKey(userProfile), sessionId)
       } else {
         setMessages(session.messages || [])
       }

@@ -1,5 +1,9 @@
 import api from './axiosInstance'
 
+function guestParams(guestSessionId) {
+  return guestSessionId ? { params: { guestSessionId } } : undefined
+}
+
 /* =========================
    AUTH
 ========================= */
@@ -15,6 +19,7 @@ export async function getMe() {
 export async function logout() {
   await api.post('/api/v1/auth/logout')
   localStorage.removeItem('accessToken')
+  localStorage.removeItem('userProfile')
   window.location.href = '/'
 }
 
@@ -23,60 +28,60 @@ export async function logout() {
 ========================= */
 export async function createChatSession(payload = {}) {
   try {
-    return await api.post('/api/v1/chat/sessions', {
+    const body = {
       title: payload.title || 'New Chat',
       linkedDocumentIds: payload.linkedDocumentIds || [],
       studentProfile: payload.studentProfile || {
         educationLevel: 'undergraduate',
         difficultyPreference: 'medium',
         favouriteSubjects: [],
-        pace: 'medium',        // ← fix dari 'normal' ke 'medium'
+        pace: 'medium',
         explanationStyle: 'concise',
       },
-      guestSessionId: payload.guestSessionId || undefined,
-      initialContext: payload.initialContext || undefined,
-    })
+    }
+
+    if (payload.guestSessionId) body.guestSessionId = payload.guestSessionId
+    if (payload.initialContext) body.initialContext = payload.initialContext
+
+    return await api.post('/api/v1/chat/sessions', body)
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Gagal membuat sesi chat')
+    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal membuat sesi chat')
   }
 }
 
 export async function listChatSessions(guestSessionId = null) {
   try {
-    const params = guestSessionId ? `?guestSessionId=${guestSessionId}` : ''
-    return await api.get(`/api/v1/chat/sessions${params}`)
+    return await api.get('/api/v1/chat/sessions', guestParams(guestSessionId))
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Gagal mengambil sesi chat')
+    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal mengambil sesi chat')
   }
 }
 
 export async function resumeChatSession(sessionId, guestSessionId = null) {
   try {
-    const params = guestSessionId ? `?guestSessionId=${guestSessionId}` : ''
-    return await api.get(`/api/v1/chat/sessions/${sessionId}${params}`)
+    return await api.get(`/api/v1/chat/sessions/${sessionId}`, guestParams(guestSessionId))
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Gagal mengambil sesi chat')
+    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal mengambil sesi chat')
   }
 }
 
 export async function getChatHistory(sessionId, guestSessionId = null) {
   try {
-    const params = guestSessionId ? `?guestSessionId=${guestSessionId}` : ''
-    return await api.get(`/api/v1/chat/sessions/${sessionId}/messages${params}`)
+    return await api.get(`/api/v1/chat/sessions/${sessionId}/messages`, guestParams(guestSessionId))
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Gagal mengambil history pesan')
+    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal mengambil history pesan')
   }
 }
 
 export async function sendMessage(sessionId, content, guestSessionId = null) {
   try {
-    const params = guestSessionId ? `?guestSessionId=${guestSessionId}` : ''
-    return await api.post(`/api/v1/chat/sessions/${sessionId}/messages${params}`, {
-      content,
-      stream: false,
-    })
+    return await api.post(
+      `/api/v1/chat/sessions/${sessionId}/messages`,
+      { content, stream: false },
+      guestParams(guestSessionId)
+    )
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Gagal mengirim pesan')
+    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal mengirim pesan')
   }
 }
 
@@ -92,7 +97,7 @@ export async function uploadFile(file, userId) {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Upload file gagal')
+    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Upload file gagal')
   }
 }
 
@@ -100,7 +105,7 @@ export async function uploadURL(url, userId) {
   try {
     return await api.post('/api/v1/upload/url', { url, userId })
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Upload URL gagal')
+    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Upload URL gagal')
   }
 }
 
@@ -108,7 +113,7 @@ export async function uploadDrive(driveUrl, userId) {
   try {
     return await api.post('/api/v1/upload/drive', { driveUrl, userId })
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Upload Drive gagal')
+    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Upload Drive gagal')
   }
 }
 
@@ -116,7 +121,7 @@ export async function uploadText(text, userId) {
   try {
     return await api.post('/api/v1/upload/text', { text, userId })
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Upload text gagal')
+    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Upload text gagal')
   }
 }
 
@@ -124,7 +129,7 @@ export async function getSources(userId) {
   try {
     return await api.get(`/api/v1/sources/${userId}`)
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Gagal mengambil sources')
+    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal mengambil sources')
   }
 }
 
@@ -132,6 +137,6 @@ export async function deleteSource(sourceId) {
   try {
     return await api.delete(`/api/v1/sources/${sourceId}`)
   } catch (error) {
-    throw new Error(error.response?.data?.message || 'Gagal menghapus source')
+    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal menghapus source')
   }
 }
