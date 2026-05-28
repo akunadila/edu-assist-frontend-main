@@ -35,6 +35,8 @@
   display: none;
 }
 
+
+
 .sidebar-logo {
   display: flex;
   align-items: center;
@@ -946,3 +948,25 @@
   font-size: 0.85rem;
   color: #9ca3af;
 }
+
+.source-type-tab {
+  flex: 1;
+  padding: 0.4rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #6b7280;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.source-type-tab svg {
+  width: 18px;
+  height: 18px;
+}
+

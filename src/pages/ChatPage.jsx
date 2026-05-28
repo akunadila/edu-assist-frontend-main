@@ -8,19 +8,41 @@ import {
   getOrCreateGuestSessionId,
   isAuthenticatedUser,
 } from '../services/chatSessionIdentity'
+import {
+  BookOpen,
+  FileText,
+  Brain,
+  Search,
+  MessageCircle,
+  FolderKanban,
+  History,
+  Settings,
+  Globe,
+  ClipboardList,
+} from 'lucide-react'
+
+import { SiGoogledrive } from 'react-icons/si'
 
 const SUGGESTIONS = [
-  { icon: '📚', label: 'Bantu belajar' },
-  { icon: '✍️', label: 'Rangkumin materi' },
-  { icon: '🧠', label: 'Latihan soal' },
-  { icon: '🔍', label: 'Jelaskan konsep' },
+  { icon: <BookOpen size={18} />, label: 'Bantu belajar' },
+  { icon: <FileText size={18} />, label: 'Rangkumin materi' },
+  { icon: <Brain size={18} />, label: 'Latihan soal' },
+  { icon: <Search size={18} />, label: 'Jelaskan konsep' },
 ]
 
 const SOURCE_TYPES = [
-  { id: 'file', icon: '📄', label: 'Upload File', desc: 'PDF, DOCX, TXT' },
-  { id: 'drive', icon: '📁', label: 'Google Drive', desc: 'Paste link Drive' },
-  { id: 'url', icon: '🌐', label: 'Website URL', desc: 'Paste link website' },
-  { id: 'text', icon: '📋', label: 'Copied Text', desc: 'Paste teks langsung' },
+  { id: 'file', icon: <FileText size={18} />, label: 'Upload File', desc: 'PDF, DOCX, TXT' },
+
+  {
+    id: 'drive',
+    icon: <SiGoogledrive size={18} />,
+    label: 'Google Drive',
+    desc: 'Paste link Drive',
+  },
+
+  { id: 'url', icon: <Globe size={18} />, label: 'Website URL', desc: 'Paste link website' },
+
+  { id: 'text', icon: <ClipboardList size={18} />, label: 'Copied Text', desc: 'Paste teks langsung' },
 ]
 
 function ChatPage() {
@@ -140,7 +162,7 @@ function ChatPage() {
     } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: `❌ Error: ${err.message}` },
+        { role: 'assistant', content: ` Error: ${err.message}` },
       ])
     } finally {
       setIsLoading(false)
@@ -258,21 +280,39 @@ function ChatPage() {
   return (
     <div className={`chat-root ${theme}`}>
       <aside className={`chat-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
-        <div className="sidebar-logo">
-          <span className="sidebar-logo-text">Edu<span className="sidebar-logo-accent">Assist</span></span>
-          <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
+      <div className="sidebar-logo">
+  <img
+    src="/icons/image1.png"
+    alt="EduAssist"
+    className="sidebar-full-logo"
+  />
+        <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
         </div>
         <button className="sidebar-new-chat" onClick={handleNewChat}>
           <span>✏️</span>
           <span>New Chat</span>
         </button>
         <nav className="sidebar-nav">
-          {[
-            { id: 'chat', icon: '💬', label: 'Chat' },
-            { id: 'spaces', icon: '🗂️', label: 'Spaces' },
-            { id: 'history', icon: '🕘', label: 'History' },
-            { id: 'settings', icon: '⚙️', label: 'Settings' },
-          ].map((item) => (
+        {[
+  { 
+    id: 'chat', 
+    icon: <MessageCircle size={18} />, 
+    label: 'Chat' 
+  },
+
+
+  { 
+    id: 'history', 
+    icon: <History size={18}  />, 
+    label: 'History' 
+  },
+
+  { 
+    id: 'settings', 
+    icon: <Settings size={18} color="#d1d5db" />, 
+    label: 'Settings' 
+  },
+].map((item) => (
             <button
               key={item.id}
               className={`sidebar-nav-item ${activeMenu === item.id ? 'active' : ''}`}
@@ -442,7 +482,7 @@ function ChatPage() {
         {activeMenu === 'settings' && (
           <div className="panel-content">
             <div className="panel-header">
-              <h2 className="panel-title">⚙️ Pengaturan</h2>
+              <h2 className="panel-title">⚙️Pengaturan</h2>
               <p className="panel-sub">Kelola profil dan tampilan aplikasi</p>
             </div>
             <div className="settings-section">
@@ -484,26 +524,13 @@ function ChatPage() {
           </div>
         )}
 
-        {activeMenu === 'spaces' && (
-          <div className="panel-content">
-            <div className="panel-header">
-              <h2 className="panel-title">🗂️ Spaces</h2>
-              <p className="panel-sub">Fitur ini akan segera hadir</p>
-            </div>
-            <div className="coming-soon">
-              <p className="coming-soon-icon">🚧</p>
-              <p className="coming-soon-text">Coming Soon</p>
-              <p className="coming-soon-sub">Spaces sedang dalam pengembangan</p>
-            </div>
-          </div>
-        )}
 
         {activeMenu === 'chat' && (
           <>
             {isNewChat ? (
               <div className="chat-landing">
                 <h1 className="chat-landing-title">
-                  Halo, <span className="chat-landing-accent">{userProfile.nama || 'Pelajar'}</span> 👋
+                  Halo, <span className="chat-landing-accent">{userProfile.nama || 'Pelajar'}</span> 
                 </h1>
                 <p className="chat-landing-sub">Ada yang bisa EduAssist bantu hari ini?</p>
                 <div className="chat-input-wrapper landing">

@@ -21,9 +21,11 @@ function OnboardingPage() {
     <div className="login-root">
       <div className="login-grid" />
       <div className="login-card">
-        <div className="login-logo">
-          ✏️ <span className="login-logo-text">EduAssist</span>
-        </div>
+      <img
+    src="/icons/image1.png"
+    alt="EduAssist"
+    className="sidebar-full-logo"
+  />
         <h1 className="login-title">Selamat datang di EduAssist</h1>
         <p className="login-sub">Silahkan log in untuk dapat mengakses EduAssist</p>
         <button className="login-google-btn" onClick={handleGoogleLogin}>
