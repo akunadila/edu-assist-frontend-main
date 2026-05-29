@@ -1,4 +1,5 @@
-import api from './axiosInstance'
+import apiClient from './axiosInstance'
+import { clearAuthState } from './authStorage'
 
 function guestParams(guestSessionId) {
   return guestSessionId ? { params: { guestSessionId } } : undefined
@@ -13,13 +14,21 @@ export function loginWithGoogle() {
 }
 
 export async function getMe() {
-  return await api.get('/api/v1/auth/me')
+  return await apiClient.get('/api/v1/auth/me')
+}
+
+export async function signOut() {
+  try {
+    await apiClient.post('/api/v1/auth/logout')
+  } catch (error) {
+    console.warn('Logout request failed:', error)
+  } finally {
+    clearAuthState()
+  }
 }
 
 export async function logout() {
-  await api.post('/api/v1/auth/logout')
-  localStorage.removeItem('accessToken')
-  localStorage.removeItem('userProfile')
+  await signOut()
   window.location.href = '/'
 }
 
@@ -43,7 +52,7 @@ export async function createChatSession(payload = {}) {
     if (payload.guestSessionId) body.guestSessionId = payload.guestSessionId
     if (payload.initialContext) body.initialContext = payload.initialContext
 
-    return await api.post('/api/v1/chat/sessions', body)
+    return await apiClient.post('/api/v1/chat/sessions', body)
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal membuat sesi chat')
   }
@@ -51,7 +60,7 @@ export async function createChatSession(payload = {}) {
 
 export async function listChatSessions(guestSessionId = null) {
   try {
-    return await api.get('/api/v1/chat/sessions', guestParams(guestSessionId))
+    return await apiClient.get('/api/v1/chat/sessions', guestParams(guestSessionId))
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal mengambil sesi chat')
   }
@@ -59,7 +68,7 @@ export async function listChatSessions(guestSessionId = null) {
 
 export async function resumeChatSession(sessionId, guestSessionId = null) {
   try {
-    return await api.get(`/api/v1/chat/sessions/${sessionId}`, guestParams(guestSessionId))
+    return await apiClient.get(`/api/v1/chat/sessions/${sessionId}`, guestParams(guestSessionId))
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal mengambil sesi chat')
   }
@@ -67,7 +76,7 @@ export async function resumeChatSession(sessionId, guestSessionId = null) {
 
 export async function getChatHistory(sessionId, guestSessionId = null) {
   try {
-    return await api.get(`/api/v1/chat/sessions/${sessionId}/messages`, guestParams(guestSessionId))
+    return await apiClient.get(`/api/v1/chat/sessions/${sessionId}/messages`, guestParams(guestSessionId))
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal mengambil history pesan')
   }
@@ -75,7 +84,7 @@ export async function getChatHistory(sessionId, guestSessionId = null) {
 
 export async function sendMessage(sessionId, content, guestSessionId = null) {
   try {
-    return await api.post(
+    return await apiClient.post(
       `/api/v1/chat/sessions/${sessionId}/messages`,
       { content, stream: false },
       guestParams(guestSessionId)
@@ -93,7 +102,7 @@ export async function uploadFile(file, userId) {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('userId', userId)
-    return await api.post('/api/v1/upload/file', formData, {
+    return await apiClient.post('/api/v1/upload/file', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   } catch (error) {
@@ -103,7 +112,7 @@ export async function uploadFile(file, userId) {
 
 export async function uploadURL(url, userId) {
   try {
-    return await api.post('/api/v1/upload/url', { url, userId })
+    return await apiClient.post('/api/v1/upload/url', { url, userId })
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || 'Upload URL gagal')
   }
@@ -111,7 +120,7 @@ export async function uploadURL(url, userId) {
 
 export async function uploadDrive(driveUrl, userId) {
   try {
-    return await api.post('/api/v1/upload/drive', { driveUrl, userId })
+    return await apiClient.post('/api/v1/upload/drive', { driveUrl, userId })
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || 'Upload Drive gagal')
   }
@@ -119,7 +128,7 @@ export async function uploadDrive(driveUrl, userId) {
 
 export async function uploadText(text, userId) {
   try {
-    return await api.post('/api/v1/upload/text', { text, userId })
+    return await apiClient.post('/api/v1/upload/text', { text, userId })
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || 'Upload text gagal')
   }
@@ -127,7 +136,7 @@ export async function uploadText(text, userId) {
 
 export async function getSources(userId) {
   try {
-    return await api.get(`/api/v1/sources/${userId}`)
+    return await apiClient.get(`/api/v1/sources/${userId}`)
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal mengambil sources')
   }
@@ -135,7 +144,7 @@ export async function getSources(userId) {
 
 export async function deleteSource(sourceId) {
   try {
-    return await api.delete(`/api/v1/sources/${sourceId}`)
+    return await apiClient.delete(`/api/v1/sources/${sourceId}`)
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal menghapus source')
   }

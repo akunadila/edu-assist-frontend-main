@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getMe } from '../services/api'
 import { clearGuestChatState } from '../services/chatSessionIdentity'
+import { setAccessToken, setUserProfile } from '../services/authStorage'
 import '../styles/authcallback.css'
 
 function AuthCallback() {
@@ -17,20 +18,20 @@ function AuthCallback() {
         return
       }
 
-      localStorage.setItem('accessToken', token)
+      setAccessToken(token)
       clearGuestChatState()
 
       try {
         const data = await getMe()
         const user = data.user || data
-        localStorage.setItem('userProfile', JSON.stringify({
+        setUserProfile({
           nama: user.name || user.nama || user.displayName || 'User',
           email: user.email || '',
           foto: user.picture || user.foto || '',
           userId: user.id || user.userId || '',
           levelPendidikan: user.levelPendidikan || '',
           preferensiTone: user.preferensiTone || '',
-        }))
+        })
       } catch (err) {
         console.error('Gagal fetch user profile:', err)
       }
