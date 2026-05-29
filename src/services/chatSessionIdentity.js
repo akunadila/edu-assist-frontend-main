@@ -19,7 +19,9 @@ function createUuid() {
 }
 
 export function isAuthenticatedUser() {
-  return Boolean(localStorage.getItem('accessToken'))
+  const accessToken = localStorage.getItem('accessToken')
+  console.log('Checking authentication status. Access Token:', accessToken)
+  return !!accessToken
 }
 
 export function getOrCreateGuestSessionId() {

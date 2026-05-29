@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { loginWithGoogle } from '../services/api'
+import { loginWithGoogle, signOut } from '../services/api'
 import { getOrCreateGuestSessionId } from '../services/chatSessionIdentity'
 import '../styles/onboarding.css'
 
@@ -10,9 +10,8 @@ function OnboardingPage() {
     loginWithGoogle()
   }
 
-  function handleGuestMode() {
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('userProfile')
+  async function handleGuestMode() {
+    await signOut()
     getOrCreateGuestSessionId()
     navigate('/chat')
   }

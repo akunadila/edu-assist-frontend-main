@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import '../styles/chat.css'
-import { sendMessage, createChatSession, uploadFile, uploadURL, uploadDrive, uploadText, listChatSessions, getChatHistory } from '../services/api'
+import { sendMessage, createChatSession, uploadFile, uploadURL, uploadDrive, uploadText, listChatSessions, getChatHistory, logout } from '../services/api'
 import {
   clearGuestChatState,
   getChatSessionStorageKey,
@@ -126,7 +126,13 @@ function ChatPage() {
     try {
       const sessionStorageKey = getChatSessionStorageKey(userProfile)
       let sessionId = sessionStorage.getItem(sessionStorageKey)
-      const guestSessionId = getGuestSessionIdForChatRequest()
+      
+      const authenticated = isAuthenticatedUser()
+
+      const guestSessionId = authenticated ? null : getOrCreateGuestSessionId()
+
+      console.log('Authenticated user ID:', userProfile.userId)
+      console.log('Guest Session ID for Chat Request:', guestSessionId)
 
       if (!sessionId) {
         const session = await createChatSession({
@@ -517,7 +523,7 @@ function ChatPage() {
             </div>
             <div className="settings-section">
               <h3 className="settings-section-title">Akun</h3>
-              <button className="settings-logout-btn" onClick={() => { localStorage.clear(); window.location.href = '/' }}>
+              <button className="settings-logout-btn" onClick={logout}>
                 Keluar dari EduAssist
               </button>
             </div>
