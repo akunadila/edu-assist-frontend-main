@@ -82,14 +82,19 @@ export async function getChatHistory(sessionId, guestSessionId = null) {
   }
 }
 
-export async function sendMessage(sessionId, content, guestSessionId = null) {
+const DEFAULT_SEND_MESSAGE_TIMEOUT = 75_000
+
+export async function sendMessage(sessionId, content = null, requestConfig = {}) {
+  const { timeout = DEFAULT_SEND_MESSAGE_TIMEOUT, ...restConfig } = requestConfig
+
   try {
     return await apiClient.post(
       `/api/v1/chat/sessions/${sessionId}/messages`,
-      { content, stream: false },
-      guestParams(guestSessionId)
+      { content, stream: false, attachmentIds: ["d610c3e4-8368-4077-baea-506e7f1ecb70"], locale: "en-US" },
+      { timeout, ...restConfig },
     )
   } catch (error) {
+    console.error('Error sending message:', error)
     throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal mengirim pesan')
   }
 }

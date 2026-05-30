@@ -153,7 +153,7 @@ function ChatPage() {
         setSessionsList(data.sessions || [])
       }
 
-      const result = await sendMessage(sessionId, userMsg.content, guestSessionId)
+      const result = await sendMessage(sessionId, userMsg.content)
 
       const assistantMsg = {
         role: 'assistant',
