@@ -20,7 +20,6 @@ function createUuid() {
 
 export function isAuthenticatedUser() {
   const accessToken = localStorage.getItem('accessToken')
-  console.log('Checking authentication status. Access Token:', accessToken)
   return !!accessToken
 }
 

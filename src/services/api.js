@@ -40,13 +40,6 @@ export async function createChatSession(payload = {}) {
     const body = {
       title: payload.title || 'New Chat',
       linkedDocumentIds: payload.linkedDocumentIds || [],
-      studentProfile: payload.studentProfile || {
-        educationLevel: 'undergraduate',
-        difficultyPreference: 'medium',
-        favouriteSubjects: [],
-        pace: 'medium',
-        explanationStyle: 'concise',
-      },
     }
 
     if (payload.guestSessionId) body.guestSessionId = payload.guestSessionId
@@ -54,7 +47,11 @@ export async function createChatSession(payload = {}) {
 
     return await apiClient.post('/api/v1/chat/sessions', body)
   } catch (error) {
-    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal membuat sesi chat')
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      'Gagal membuat sesi chat'
+    )
   }
 }
 
@@ -85,47 +82,43 @@ export async function getChatHistory(sessionId, guestSessionId = null) {
 const DEFAULT_SEND_MESSAGE_TIMEOUT = 75_000
 
 export async function sendMessage(sessionId, content = null, requestConfig = {}) {
-  const { timeout = DEFAULT_SEND_MESSAGE_TIMEOUT, ...restConfig } = requestConfig
+  const { timeout = DEFAULT_SEND_MESSAGE_TIMEOUT, attachmentIds = [], ...restConfig } = requestConfig
 
   try {
-
-    console.log('SESSION ID:', sessionId)
-    console.log('CONTENT:', content)
-
     return await apiClient.post(
       `/api/v1/chat/sessions/${sessionId}/messages`,
-      { content, stream: false, attachmentIds: [], locale: "en-US" },
+      { content, stream: false, attachmentIds, locale: 'id-ID' },
       { timeout, ...restConfig },
     )
   } catch (error) {
-  console.log('STATUS:', error.response?.status)
-  console.log('DATA:', error.response?.data)
-  console.error(error)
-
-  throw new Error(
-    error.response?.data?.message ||
-    error.response?.data?.error ||
-    'Gagal mengirim pesan'
-  )
-}
+    throw new Error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      'Gagal mengirim pesan'
+    )
+  }
 }
 
 /* =========================
    UPLOAD SOURCE (RAG)
 ========================= */
-export async function uploadFile(file, userId) {
+export async function uploadDocument(file) {
   try {
     const formData = new FormData()
     formData.append('file', file)
-    formData.append('userId', userId)
-    
-    
-
-    return await apiClient.post('/api/v1/upload/file', formData, {
+    return await apiClient.post('/api/v1/documents', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   } catch (error) {
-    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Upload file gagal')
+    throw new Error(error.response?.data?.message || 'Upload file gagal')
+  }
+}
+
+export async function listDocuments() {
+  try {
+    return await apiClient.get('/api/v1/documents')
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Gagal mengambil dokumen')
   }
 }
 
@@ -133,7 +126,7 @@ export async function uploadURL(url, userId) {
   try {
     return await apiClient.post('/api/v1/upload/url', { url, userId })
   } catch (error) {
-    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Upload URL gagal')
+    throw new Error(error.response?.data?.message || 'Upload URL gagal')
   }
 }
 
@@ -141,7 +134,7 @@ export async function uploadDrive(driveUrl, userId) {
   try {
     return await apiClient.post('/api/v1/upload/drive', { driveUrl, userId })
   } catch (error) {
-    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Upload Drive gagal')
+    throw new Error(error.response?.data?.message || 'Upload Drive gagal')
   }
 }
 
@@ -149,7 +142,7 @@ export async function uploadText(text, userId) {
   try {
     return await apiClient.post('/api/v1/upload/text', { text, userId })
   } catch (error) {
-    throw new Error(error.response?.data?.message || error.response?.data?.error || 'Upload text gagal')
+    throw new Error(error.response?.data?.message || 'Upload text gagal')
   }
 }
 
@@ -166,5 +159,30 @@ export async function deleteSource(sourceId) {
     return await apiClient.delete(`/api/v1/sources/${sourceId}`)
   } catch (error) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal menghapus source')
+  }
+}
+
+/* =========================
+   STUDENT PROFILE
+========================= */
+export async function getStudentProfile() {
+  try {
+    return await apiClient.get('/api/v1/profiles/me')
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Gagal mengambil profil')
+  }
+}
+
+export async function updateStudentProfile(profileData) {
+  try {
+    return await apiClient.patch('/api/v1/profiles/me', {
+      educationLevel: profileData.educationLevel,
+      difficultyPreference: profileData.difficultyPreference,
+      favouriteSubjects: profileData.favouriteSubjects,
+      pace: profileData.pace,
+      explanationStyle: profileData.explanationStyle,
+    })
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Gagal update profil')
   }
 }

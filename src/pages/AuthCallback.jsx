@@ -36,8 +36,13 @@ function AuthCallback() {
         console.error('Gagal fetch user profile:', err)
       }
 
-      navigate('/chat')
-    }
+      const hasPersonalized = localStorage.getItem('hasPersonalized')
+if (hasPersonalized) {
+  navigate('/chat')
+} else {
+  navigate('/personalization')
+}
+ }
 
     handleCallback()
   }, [navigate])
