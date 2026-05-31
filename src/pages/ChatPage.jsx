@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import '../styles/chat.css'
-import { sendMessage, createChatSession, uploadFile, uploadURL, uploadDrive, uploadText, listChatSessions, getChatHistory, logout } from '../services/api'
+import { sendMessage, createChatSession, uploadFile, uploadURL, uploadDrive, uploadText, listChatSessions, getChatHistory, logout, getStudentProfile, updateStudentProfile } from '../services/api'
 import {
   clearGuestChatState,
   getChatSessionStorageKey,
@@ -14,13 +14,11 @@ import {
   Brain,
   Search,
   MessageCircle,
-  FolderKanban,
   History,
   Settings,
   Globe,
   ClipboardList,
 } from 'lucide-react'
-
 import { SiGoogledrive } from 'react-icons/si'
 
 const SUGGESTIONS = [
@@ -32,16 +30,8 @@ const SUGGESTIONS = [
 
 const SOURCE_TYPES = [
   { id: 'file', icon: <FileText size={18} />, label: 'Upload File', desc: 'PDF, DOCX, TXT' },
-
-  {
-    id: 'drive',
-    icon: <SiGoogledrive size={18} />,
-    label: 'Google Drive',
-    desc: 'Paste link Drive',
-  },
-
+  { id: 'drive', icon: <SiGoogledrive size={18} />, label: 'Google Drive', desc: 'Paste link Drive' },
   { id: 'url', icon: <Globe size={18} />, label: 'Website URL', desc: 'Paste link website' },
-
   { id: 'text', icon: <ClipboardList size={18} />, label: 'Copied Text', desc: 'Paste teks langsung' },
 ]
 
@@ -63,20 +53,15 @@ function ChatPage() {
     const saved = localStorage.getItem('eduAssistHistory')
     return saved ? JSON.parse(saved) : []
   })
+  const [showEditPreferences, setShowEditPreferences] = useState(false)
+  const [editProfile, setEditProfile] = useState({})
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
+  const [studentProfile, setStudentProfile] = useState(null)
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
   const fileInputRef = useRef(null)
 
-  useEffect(() => {
-    if (isAuthenticatedUser()) {
-      clearGuestChatState()
-      return
-    }
-
-    getOrCreateGuestSessionId()
-  }, [])
-  
   const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}')
   const isNewChat = messages.length === 0
 
@@ -84,10 +69,48 @@ function ChatPage() {
     ? userProfile.nama.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U'
 
+  // Init guest/auth session
+  useEffect(() => {
+    if (isAuthenticatedUser()) {
+      clearGuestChatState()
+      return
+    }
+    getOrCreateGuestSessionId()
+  }, [])
+
+  // Load student profile dari backend
+ useEffect(() => {
+  async function loadStudentProfile() {
+    if (!isAuthenticatedUser()) return
+
+    try {
+      const data = await getStudentProfile()
+      setStudentProfile(data.profile)
+
+      const existing = JSON.parse(localStorage.getItem('userProfile') || '{}')
+
+      localStorage.setItem(
+        'userProfile',
+        JSON.stringify({
+          ...existing,
+          ...data.profile,
+        })
+      )
+    } catch (err) {
+      console.log('Gagal load student profile:', err.message)
+    }
+  }
+
+  loadStudentProfile()
+}, [])
+     
+
+  // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Load sessions list
   useEffect(() => {
     async function loadSessions() {
       try {
@@ -99,6 +122,26 @@ function ChatPage() {
       }
     }
     loadSessions()
+  }, [])
+
+  // Restore last session
+  useEffect(() => {
+    async function restoreLastSession() {
+      const sessionId = sessionStorage.getItem(getChatSessionStorageKey(userProfile))
+      if (!sessionId) return
+      try {
+        const guestSessionId = getGuestSessionIdForChatRequest()
+        const data = await getChatHistory(sessionId, guestSessionId)
+        const formattedMessages = (data.messages || []).map((msg) => ({
+          role: msg.role === 'user' ? 'user' : 'assistant',
+          content: msg.content,
+        }))
+        setMessages(formattedMessages)
+      } catch (err) {
+        console.log('Failed restore session:', err)
+      }
+    }
+    restoreLastSession()
   }, [])
 
   function saveChatToHistory(currentMessages) {
@@ -115,6 +158,42 @@ function ChatPage() {
     localStorage.setItem('eduAssistHistory', JSON.stringify(updatedHistory))
   }
 
+  function handleOpenEditPreferences() {
+    const profile = studentProfile || userProfile
+    setEditProfile({
+      educationLevel: profile.educationLevel || 'undergraduate',
+      difficultyPreference: profile.difficultyPreference || 'medium',
+      pace: profile.pace || 'medium',
+      explanationStyle: profile.explanationStyle || 'concise',
+      favouriteSubjects: profile.favouriteSubjects || [],
+    })
+    setShowEditPreferences(true)
+  }
+
+  async function handleSavePreferences() {
+    setIsSavingProfile(true)
+
+    try {
+      const updated = await updateStudentProfile(editProfile)
+      setStudentProfile(updated.profile)
+
+      const existing = JSON.parse(localStorage.getItem('userProfile') || '{}')
+      localStorage.setItem(
+        'userProfile',
+        JSON.stringify({
+          ...existing,
+          ...updated.profile,
+        })
+      )
+
+      setShowEditPreferences(false)
+    } catch (err) {
+      alert('Gagal update profil: ' + err.message)
+    } finally {
+      setIsSavingProfile(false)
+    }
+  }
+
   async function handleSend() {
     if (!input.trim() || isLoading) return
 
@@ -126,24 +205,31 @@ function ChatPage() {
     try {
       const sessionStorageKey = getChatSessionStorageKey(userProfile)
       let sessionId = sessionStorage.getItem(sessionStorageKey)
-      
       const authenticated = isAuthenticatedUser()
-
       const guestSessionId = authenticated ? null : getOrCreateGuestSessionId()
 
-      console.log('Authenticated user ID:', userProfile.userId)
-      console.log('Guest Session ID for Chat Request:', guestSessionId)
-
       if (!sessionId) {
+        // Ambil profile dari backend kalau authenticated
+        let profile = studentProfile
+        if (authenticated && !profile) {
+          try {
+            const data = await getStudentProfile()
+            profile = data.profile
+            setStudentProfile(data.profile)
+          } catch {
+            profile = null
+          }
+        }
+
         const session = await createChatSession({
           title: input.trim().slice(0, 50),
           guestSessionId,
           studentProfile: {
-            educationLevel: userProfile.levelPendidikan || 'undergraduate',
-            difficultyPreference: 'medium',
-            favouriteSubjects: [],
-            pace: 'medium',        // ← fix dari 'normal' ke 'medium'
-            explanationStyle: userProfile.preferensiTone || 'concise',
+            educationLevel: profile?.educationLevel || 'undergraduate',
+            difficultyPreference: profile?.difficultyPreference || 'adaptive',
+            favouriteSubjects: profile?.favouriteSubjects || [],
+            pace: profile?.pace || 'medium',
+            explanationStyle: profile?.explanationStyle || 'detailed',
           },
         })
         sessionId = session.conversationId
@@ -168,7 +254,7 @@ function ChatPage() {
     } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: ` Error: ${err.message}` },
+        { role: 'assistant', content: `❌ Error: ${err.message}` },
       ])
     } finally {
       setIsLoading(false)
@@ -283,42 +369,29 @@ function ChatPage() {
     setSources((prev) => prev.filter((s) => s.id !== id))
   }
 
+  const displayProfile = studentProfile || userProfile
+
   return (
     <div className={`chat-root ${theme}`}>
+
+      {/* ===== SIDEBAR ===== */}
       <aside className={`chat-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
-      <div className="sidebar-logo">
-  <img
-    src="/icons/image1.png"
-    alt="EduAssist"
-    className="sidebar-full-logo"
-  />
-        <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
+        <div className="sidebar-logo">
+          <img src="/icons/image1.png" alt="EduAssist" className="sidebar-full-logo" />
+          <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
         </div>
+
         <button className="sidebar-new-chat" onClick={handleNewChat}>
           <span>✏️</span>
           <span>New Chat</span>
         </button>
+
         <nav className="sidebar-nav">
-        {[
-  { 
-    id: 'chat', 
-    icon: <MessageCircle size={18} />, 
-    label: 'Chat' 
-  },
-
-
-  { 
-    id: 'history', 
-    icon: <History size={18}  />, 
-    label: 'History' 
-  },
-
-  { 
-    id: 'settings', 
-    icon: <Settings size={18} color="#d1d5db" />, 
-    label: 'Settings' 
-  },
-].map((item) => (
+          {[
+            { id: 'chat', icon: <MessageCircle size={18} />, label: 'Chat' },
+            { id: 'history', icon: <History size={18} />, label: 'History' },
+            { id: 'settings', icon: <Settings size={18} color="#d1d5db" />, label: 'Settings' },
+          ].map((item) => (
             <button
               key={item.id}
               className={`sidebar-nav-item ${activeMenu === item.id ? 'active' : ''}`}
@@ -329,6 +402,7 @@ function ChatPage() {
             </button>
           ))}
         </nav>
+
         <div className="sidebar-history">
           <p className="sidebar-history-title">Recent</p>
           {sessionsList.length > 0 ? (
@@ -353,15 +427,17 @@ function ChatPage() {
             <p className="sidebar-history-empty">Belum ada percakapan</p>
           )}
         </div>
+
         <div className="sidebar-profile">
           <div className="profile-avatar">{initials}</div>
           <div className="profile-info">
             <p className="profile-name">{userProfile.nama || 'User'}</p>
-            <p className="profile-meta">{userProfile.levelPendidikan} · {userProfile.preferensiTone}</p>
+            <p className="profile-meta">{displayProfile.educationLevel || '-'} · {displayProfile.pace || '-'}</p>
           </div>
         </div>
       </aside>
 
+      {/* ===== SOURCES PANEL ===== */}
       {activeMenu === 'chat' && (
         <div className="sources-panel">
           <div className="sources-header">
@@ -439,7 +515,10 @@ function ChatPage() {
         </div>
       )}
 
+      {/* ===== MAIN CONTENT ===== */}
       <main className="chat-main">
+
+        {/* HISTORY */}
         {activeMenu === 'history' && (
           <div className="panel-content">
             <div className="panel-header">
@@ -485,12 +564,14 @@ function ChatPage() {
           </div>
         )}
 
+        {/* SETTINGS */}
         {activeMenu === 'settings' && (
           <div className="panel-content">
             <div className="panel-header">
-              <h2 className="panel-title">⚙️Pengaturan</h2>
+              <h2 className="panel-title">⚙️ Pengaturan</h2>
               <p className="panel-sub">Kelola profil dan tampilan aplikasi</p>
             </div>
+
             <div className="settings-section">
               <h3 className="settings-section-title">Profil</h3>
               <div className="settings-profile-card">
@@ -508,6 +589,40 @@ function ChatPage() {
                 </div>
               </div>
             </div>
+
+            <div className="settings-section">
+              <h3 className="settings-section-title">Learning Preferences</h3>
+              <div className="settings-learn-card">
+                <div className="settings-learn-item">
+                  <span className="learn-label">Education Level</span>
+                  <span className="learn-value">{displayProfile.educationLevel || '-'}</span>
+                </div>
+                <div className="settings-learn-item">
+                  <span className="learn-label">Difficulty</span>
+                  <span className="learn-value">{displayProfile.difficultyPreference || '-'}</span>
+                </div>
+                <div className="settings-learn-item">
+                  <span className="learn-label">Pace</span>
+                  <span className="learn-value">{displayProfile.pace || '-'}</span>
+                </div>
+                <div className="settings-learn-item">
+                  <span className="learn-label">Explanation Style</span>
+                  <span className="learn-value">{displayProfile.explanationStyle || '-'}</span>
+                </div>
+                <div className="settings-learn-item">
+                  <span className="learn-label">Favourite Subjects</span>
+                  <span className="learn-value">
+                    {displayProfile.favouriteSubjects?.length > 0
+                      ? displayProfile.favouriteSubjects.join(', ')
+                      : '-'}
+                  </span>
+                </div>
+                <button className="settings-edit-btn" onClick={handleOpenEditPreferences}>
+                  ✏️ Edit Learning Preferences
+                </button>
+              </div>
+            </div>
+
             <div className="settings-section">
               <h3 className="settings-section-title">Tema Tampilan</h3>
               <div className="settings-theme-options">
@@ -521,6 +636,7 @@ function ChatPage() {
                 </button>
               </div>
             </div>
+
             <div className="settings-section">
               <h3 className="settings-section-title">Akun</h3>
               <button className="settings-logout-btn" onClick={logout}>
@@ -530,13 +646,77 @@ function ChatPage() {
           </div>
         )}
 
+        {/* MODAL EDIT PREFERENCES */}
+        {showEditPreferences && (
+          <div className="modal-overlay" onClick={() => setShowEditPreferences(false)}>
+            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+              <h2 className="modal-title">Learning Preferences</h2>
 
+              <div className="modal-field">
+                <label className="modal-label">Education Level</label>
+                <select className="modal-select" value={editProfile.educationLevel}
+                  onChange={(e) => setEditProfile({ ...editProfile, educationLevel: e.target.value })}>
+                  <option value="high_school">High School</option>
+                  <option value="undergraduate">Undergraduate</option>
+                  <option value="graduate">Graduate</option>
+                </select>
+              </div>
+
+              <div className="modal-field">
+                <label className="modal-label">Difficulty Preference</label>
+                <select className="modal-select" value={editProfile.difficultyPreference}
+                  onChange={(e) => setEditProfile({ ...editProfile, difficultyPreference: e.target.value })}>
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                  <option value="adaptive">Adaptive</option>
+                </select>
+              </div>
+
+              <div className="modal-field">
+                <label className="modal-label">Learning Pace</label>
+                <select className="modal-select" value={editProfile.pace}
+                  onChange={(e) => setEditProfile({ ...editProfile, pace: e.target.value })}>
+                  <option value="slow">Slow</option>
+                  <option value="medium">Medium</option>
+                  <option value="fast">Fast</option>
+                </select>
+              </div>
+
+              <div className="modal-field">
+                <label className="modal-label">Explanation Style</label>
+                <select className="modal-select" value={editProfile.explanationStyle}
+                  onChange={(e) => setEditProfile({ ...editProfile, explanationStyle: e.target.value })}>
+                  <option value="concise">Concise</option>
+                  <option value="detailed">Detailed</option>
+                  <option value="step_by_step">Step by Step</option>
+                  <option value="analogy">Analogy</option>
+                </select>
+              </div>
+
+              <div className="modal-actions">
+                <button className="modal-cancel" onClick={() => setShowEditPreferences(false)}>
+                  Cancel
+                </button>
+                <button
+                  className="modal-save"
+                  onClick={handleSavePreferences}
+                  disabled={isSavingProfile}
+                >
+                  {isSavingProfile ? 'Menyimpan...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CHAT */}
         {activeMenu === 'chat' && (
           <>
             {isNewChat ? (
               <div className="chat-landing">
                 <h1 className="chat-landing-title">
-                  Halo, <span className="chat-landing-accent">{userProfile.nama || 'Pelajar'}</span> 
+                  Halo, <span className="chat-landing-accent">{userProfile.nama || 'Pelajar'}</span> 👋
                 </h1>
                 <p className="chat-landing-sub">Ada yang bisa EduAssist bantu hari ini?</p>
                 <div className="chat-input-wrapper landing">

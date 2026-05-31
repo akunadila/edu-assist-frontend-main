@@ -154,3 +154,28 @@ export async function deleteSource(sourceId) {
     throw new Error(error.response?.data?.message || error.response?.data?.error || 'Gagal menghapus source')
   }
 }
+
+/* =========================
+   STUDENT PROFILE
+========================= */
+export async function getStudentProfile() {
+  try {
+    return await apiClient.get('/api/v1/profiles/me')
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Gagal mengambil profil')
+  }
+}
+
+export async function updateStudentProfile(profileData) {
+  try {
+    return await apiClient.patch('/api/v1/profiles/me', {
+      educationLevel: profileData.educationLevel,
+      difficultyPreference: profileData.difficultyPreference,
+      favouriteSubjects: profileData.favouriteSubjects,
+      pace: profileData.pace,
+      explanationStyle: profileData.explanationStyle,
+    })
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Gagal update profil')
+  }
+}
