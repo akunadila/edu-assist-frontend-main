@@ -23,8 +23,8 @@
 }
 
 .chat-sidebar.closed {
-  width: 56px;
-  min-width: 56px;
+  width: 88px;
+  min-width: 88px;
 }
 
 .chat-sidebar.closed .nav-label,
@@ -33,6 +33,22 @@
 .chat-sidebar.closed .profile-text,
 .chat-sidebar.closed .profile-chevron {
   display: none;
+}
+/*.chat-sidebar.closed .sidebar-logo-img {
+  width: 28px;
+}*/
+.chat-sidebar.closed .sidebar-nav-item,
+.chat-sidebar.closed .sidebar-new-chat {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}.chat-sidebar.closed .sidebar-profile {
+  justify-content: center;
+}
+.chat-sidebar.closed .sidebar-logo-img {
+  width: 28px;
+  height: 28px;
+  transform: none;
 }
 
 /* Logo */

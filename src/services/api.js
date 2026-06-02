@@ -40,13 +40,14 @@ export async function createChatSession(payload = {}) {
     const body = {
       title: payload.title || 'New Chat',
       linkedDocumentIds: payload.linkedDocumentIds || [],
-      studentProfile: payload.studentProfile || {
+      //studentProfile: payload.studentProfile || 
+      /*{
         educationLevel: 'undergraduate',
         difficultyPreference: 'medium',
         favouriteSubjects: [],
         pace: 'medium',
         explanationStyle: 'concise',
-      },
+      },*/
     }
 
     if (payload.guestSessionId) body.guestSessionId = payload.guestSessionId
