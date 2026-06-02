@@ -50,6 +50,15 @@
   height: 28px;
   transform: none;
 }
+.chat-sidebar.closed .sidebar-new-chat,
+.chat-sidebar.closed .sidebar-nav-item {
+  background: transparent;
+  box-shadow: none;
+}
+.chat-sidebar.closed .sidebar-new-chat:hover,
+.chat-sidebar.closed .sidebar-nav-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
 
 /* Logo */
 .sidebar-logo {
@@ -1046,4 +1055,5 @@
     padding: 1.5rem 1.25rem;
   }
 }
+
 
