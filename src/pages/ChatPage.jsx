@@ -535,7 +535,7 @@ function ChatPage() {
                 </div>
               </div>
             </div>
-            <div className="settings-section">
+            {/*<div className="settings-section">
               <h3 className="settings-section-title">Tema Tampilan</h3>
               <div className="settings-theme-options">
                 <button className={`theme-option ${theme === 'light' ? 'active' : ''}`} onClick={() => setTheme('light')}>
@@ -547,7 +547,7 @@ function ChatPage() {
                   <span>Dark</span>
                 </button>
               </div>
-            </div>
+            </div>*/}
             <div className="settings-section">
               <h3 className="settings-section-title">Akun</h3>
               <button className="settings-logout-btn" onClick={() => { localStorage.clear(); window.location.href = '/' }}>
