@@ -68,6 +68,7 @@
   width: auto;
   object-fit: contain;
   transform: translateY(8px);
+  cursor: pointer;
 }
 
 .sidebar-toggle {

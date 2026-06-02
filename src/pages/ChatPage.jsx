@@ -254,21 +254,32 @@ function ChatPage() {
 <aside className={`chat-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
   <div className="sidebar-logo">
     <img
-    src={
-      sidebarOpen
-        ? "/icons/logo-eduassist.svg"
-        : "/icons/logo-collapse.svg"
+  src={
+    sidebarOpen
+      ? "/icons/logo-eduassist.svg"
+      : "/icons/logo-collapse.svg"
+  }
+  alt="EduAssist"
+  className="sidebar-logo-img"
+  onClick={() => {
+    if (!sidebarOpen) {
+      setSidebarOpen(true);
     }
-    alt="EduAssist"
-    className="sidebar-logo-img"
-    />
-    <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <line x1="3" y1="6" x2="21" y2="6"/>
-        <line x1="3" y1="12" x2="21" y2="12"/>
-        <line x1="3" y1="18" x2="21" y2="18"/>
-      </svg>
-    </button>
+  }}
+/>
+
+{sidebarOpen && (
+  <button
+    className="sidebar-toggle"
+    onClick={() => setSidebarOpen(false)}
+  >
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+)}
   </div>
 
   <button className="sidebar-new-chat" onClick={handleNewChat}>
